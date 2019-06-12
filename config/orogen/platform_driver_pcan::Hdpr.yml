@@ -1,0 +1,155 @@
+--- name:default
+# device address in the system. pcan32 for USB. pcan0 for PCIe
+can_dev_address: /dev/pcanusb32
+# 1 for Peak-Systems interface. Only device type supported so far
+can_dev_type: 1
+# activate/deactivate watchdog on can network
+watchdog: 0
+# system current measurement factor to convert from internal to physical units ==>> NOT USED IN HDPR
+current_factor: 41.6
+# system voltage measurement factor to convert from internal to physical units ==>> NOT USED IN HDPR
+voltage_factor: 3.93
+# system bogie angle measurement factor to convert from internal to physical units
+bogie_factor: 28
+# Number of motors in the platform.
+num_motors: 10
+# Number of can nodes in the platform = Number of motors + number of group nodes
+num_nodes: 12
+# parameters of platform can nodes
+can_parameters:
+  CanId: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]
+  Type: [WHEEL_DRIVE, WHEEL_DRIVE, WHEEL_DRIVE, WHEEL_DRIVE, WHEEL_DRIVE, WHEEL_DRIVE, WHEEL_STEER, WHEEL_STEER, WHEEL_STEER, WHEEL_STEER, WHEEL_DRIVE, WHEEL_STEER]
+  Name: [WHEEL_DRIVE_FL, WHEEL_DRIVE_FR, WHEEL_DRIVE_CL, WHEEL_DRIVE_CR, WHEEL_DRIVE_BL, WHEEL_DRIVE_BR, WHEEL_STEER_FL, WHEEL_STEER_FR, WHEEL_STEER_BL, WHEEL_STEER_BR, WHEEL_DRIVE_GROUP, WHEEL_STEER_GROUP]
+  Active: [ACTIVE, ACTIVE, ACTIVE, ACTIVE, ACTIVE, ACTIVE, ACTIVE, ACTIVE, ACTIVE, ACTIVE, ACTIVE, ACTIVE]
+
+# motor parameters of the arm joint drives - NOT APPLICABLE FOR HDPR
+param_gear_motor_arm: 
+  dPtpVelDefaultIncrS: 0.0
+  dVelMaxEncIncrS: 0.0
+  dPosLimitLowIncr: 0.0
+  dBeltRatio: 0.0
+  iSign: 0
+  iEncOffsetIncr: 0
+  dCurrentToTorque: 0.0
+  dDecIncrS2: 0.0
+  dCurrMax: 0.0
+  dGearRatio: 0.0
+  bIsSteer: 0
+  iEncIncrPerRevMot: 0
+  dAccIncrS2: 0.0
+  dPosLimitHighIncr: 0.0
+  dAnalogFactor: 0.0
+  dNominalCurrent: 0.0
+
+# motor parameters of the tilt drive - NOT APPLICABLE FOR HDPR
+param_gear_motor_tilt: 
+  dPtpVelDefaultIncrS: 40000
+  dVelMaxEncIncrS: 68000
+  dPosLimitLowIncr: -200000
+  dBeltRatio: 1
+  iSign: 1
+  iEncOffsetIncr: 0
+  dCurrentToTorque: 1.0
+  dDecIncrS2: 100000
+  dCurrMax: 0.2
+  dGearRatio: 1600
+  bIsSteer: 1
+  iEncIncrPerRevMot: 512
+  dAccIncrS2: 100000
+  dPosLimitHighIncr: 200000
+  dAnalogFactor: 0.00067139
+  dNominalCurrent: 0.081
+
+# motor parameters of the pan drive - NOT APPLICABLE FOR HDPR
+param_gear_motor_pan: 
+  dPtpVelDefaultIncrS: 40000
+  dVelMaxEncIncrS: 68000
+  dPosLimitLowIncr: -320000
+  dBeltRatio: 1
+  iSign: 1
+  iEncOffsetIncr: 0
+  dCurrentToTorque: 1.0
+  dDecIncrS2: 100000
+  dCurrMax: 0.2
+  dGearRatio: 1600
+  bIsSteer: 1
+  iEncIncrPerRevMot: 512
+  dAccIncrS2: 100000
+  dPosLimitHighIncr: 320000
+  dAnalogFactor: 0.00067139
+  dNominalCurrent: 0.081
+
+# motor parameters of the steer drives
+param_gear_motor_steer: 
+  dPtpVelDefaultIncrS: 182020
+  dVelMaxEncIncrS: 273031
+  dPosLimitLowIncr: -1430000
+  dBeltRatio: 1
+  iSign: 1
+  iEncOffsetIncr: 0
+  dCurrentToTorque: 1.0
+  dDecIncrS2: 98240
+  dCurrMax: 1.0
+  dGearRatio: 2772
+  bIsSteer: 1
+  iEncIncrPerRevMot: 2048
+  dAccIncrS2: 98240
+  dPosLimitHighIncr: 1430000
+  dAnalogFactor: 0.00067139
+  dNominalCurrent: 0.516
+
+# motor parameters of the walk drives - NOT APPLICABLE FOR HDPR
+param_gear_motor_walk: 
+  dPtpVelDefaultIncrS: 50000
+  dVelMaxEncIncrS: 75000
+  dPosLimitLowIncr: -250222
+  dBeltRatio: 1
+  iSign: 1
+  iEncOffsetIncr: 0
+  dCurrentToTorque: 1.0
+  dDecIncrS2: 100000
+  dCurrMax: 2.0
+  dGearRatio: 1900
+  bIsSteer: 1 #0 if wheel walking need to be applied
+  iEncIncrPerRevMot: 512
+  dAccIncrS2: 100000
+  dPosLimitHighIncr: 250222
+  dAnalogFactor: 0.00067139
+  dNominalCurrent: 0.664
+
+# motor parameters of the wheel drives
+param_gear_motor_wheel: 
+  dPtpVelDefaultIncrS: 166666
+  dVelMaxEncIncrS: 250000
+  dPosLimitLowIncr: -100000000
+  dBeltRatio: 1
+  iSign: 1
+  iEncOffsetIncr: 0
+  dCurrentToTorque: 1.0
+  dDecIncrS2: 30000
+  dCurrMax: 10.0
+  dGearRatio: 100
+  bIsSteer: 0
+  iEncIncrPerRevMot: 2000
+  dAccIncrS2: 30000
+  dPosLimitHighIncr: 100000000
+  dAnalogFactor: 0.00067139
+  dNominalCurrent: 3.17
+
+#Analog identifiers and desirable names ==>> NOT USED IN HDPR
+analog_readings_config:
+    - id: 0
+      name: SYSTEM_VOLTAGE
+    - id: 1
+      name: SYSTEM_CURRENT
+
+#Passive joints identifiers and desirable names
+passive_readings_config:
+    - id: 2
+      name: LEFT_ROCKER
+    - id: 3
+      name: RIGHT_ROCKER
+    - id: 4
+      name: LEFT_BOGIE
+    - id: 5
+      name: RIGHT_BOGIE
