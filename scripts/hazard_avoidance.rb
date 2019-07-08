@@ -7,9 +7,9 @@ require 'optparse'
 include Orocos
 
 options = {:bb2 => true,
-           :v => true,
+           :v => false,
            :csc => true,
-           :logging => false}
+           :logging => true}
 
 OptionParser.new do |opts|
   opts.banner = "Usage: start.rb [options]"
@@ -19,7 +19,7 @@ end.parse!
 
 Bundles.initialize
 
-Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps', 'gyro', 'unit_vicon', 'unit_shutter_controller', 'unit_hazard_detector', 'fdir' do
+Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps', 'gyro', 'unit_vicon', 'unit_shutter_controller', 'unit_hazard_detector', 'fdir','temperature' do
 
     joystick = Orocos.name_service.get 'joystick'
     Orocos.conf.apply(joystick, ['default'], :override => true)
@@ -52,10 +52,14 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     imu_stim300 = TaskContext.get 'imu_stim300'
     Orocos.conf.apply(imu_stim300, ['default', 'HDPR', 'ESTEC', 'stim300_5g'], :override => true)
     imu_stim300.configure
-    
+
     fdir = TaskContext.get 'fdir'
     Orocos.conf.apply(fdir, ['exoter'], :override => true)
     fdir.configure
+
+    temperature = TaskContext.get 'temperature'
+    Orocos.conf.apply(temperature, ['default'], :override => true)
+    temperature.configure
 
     if options[:v] == false
         gps = TaskContext.get 'gps'
@@ -74,7 +78,7 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     puts "Starting BB2"
 
     camera_firewire_bb2 = TaskContext.get 'camera_firewire_bb2'
-    Orocos.conf.apply(camera_firewire_bb2, ['hdpr_bb2','egp_bb2_id','auto_exposure'], :override => true)
+    Orocos.conf.apply(camera_firewire_bb2, ['hdpr_bb2','egp_bb2_id'], :override => true)
     camera_firewire_bb2.configure
 
     camera_bb2 = TaskContext.get 'camera_bb2'
@@ -111,7 +115,7 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
 
     path_planner = Orocos.name_service.get 'path_planner'
     path_planner.keep_old_waypoints = true
-    Orocos.conf.apply(path_planner, ['hdpr','prl'], :override => true)
+    Orocos.conf.apply(path_planner, ['hdpr','decos'], :override => true)
     path_planner.configure
     puts "done"
 
@@ -181,6 +185,7 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     logger_path_planner.log(path_planner.global_Cost_map)
     logger_path_planner.log(path_planner.local_Risk_map)
     logger_path_planner.log(path_planner.local_Propagation_map)
+    logger_path_planner.log(path_planner.local_computation_time)
 
     if options[:v] == false
         logger_gps_heading = Orocos.name_service.get 'gps_Logger'
@@ -200,6 +205,10 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     logger_imu.file = "imu.log"
     logger_imu.log(imu_stim300.orientation_samples_out)
 
+    logger_temperature = Orocos.name_service.get 'temperature_Logger'
+    logger_temperature.file = "temperature.log"
+    logger_temperature.log(temperature.temperature_samples)
+
     platform_driver.start
     read_joint_dispatcher.start
     command_joint_dispatcher.start
@@ -210,6 +219,7 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     imu_stim300.start
     gyro.start
     fdir.start
+    temperature.start
     if options[:v] == false
         gps.start
         gps_heading.start
@@ -248,6 +258,7 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
         logger_hazard_detector.start
         logger_path_planner.start
         logger_imu.start
+        logger_temperature.start
     end
 
     #goal.start
@@ -256,25 +267,168 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     if options[:v] == false
         # Goal Position Test w/ Ricardo
         #goal.position[0] = 40.0
-        #goal.position[1] = 115.0
+        #goal.position[1] = 100.0
         # Goal Position
         #goal.position[0] = 50.0
         #goal.position[1] = 110.0
-        # Goal going to van
-        goal.position[0] = 65.0
-        goal.position[1] = 55.0
         # Start Position
         #goal.position[0] = 110.0
         #goal.position[1] = 55.0
+        # Goal going to van
+        # Start position
+        #goal.position[0] = 105.0
+        #goal.position[1] = 69.0
+        #goal.heading = 95.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 82.3
+        #goal.position[1] = 83.6
+        #goal.heading = 172.00*3.141592/180.0
+        #goal_writer.write(goal)
+        ##while waypoint_navigation.state != :DRIVING
+        ##end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 52.6
+        #goal.position[1] = 81.3
+        #goal.heading = 141.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 44.0
+        #goal.position[1] = 106.0
+        #goal.heading = 32.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 57.0
+        #goal.position[1] = 111.9
+        #goal.heading = -36.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 69.5
+        #goal.position[1] = 99.5
+        #goal.heading = -30.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 85.7
+        #goal.position[1] = 95.4
+        #goal.heading = -78.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 90.25
+        #goal.position[1] = 78.76
+        #goal.heading = -97.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 85.0
+        #goal.position[1] = 54.5
+        #goal.heading = -94.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+    # Second traverse
+    # Start position
+        #goal.position[0] = 105.0
+        #goal.position[1] = 69.0
+        #goal.heading = 95.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 94.2
+        #goal.position[1] = 81.0
+        #goal.heading = 110.0*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 75.0
+        #goal.position[1] = 102.9
+        #goal.heading = 135*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        # Third traverse
+    # Start position
+        #goal.position[0] = 75.0
+        #goal.position[1] = 102.9
+        #goal.heading = 135*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        #goal.position[0] = 44.0
+        #goal.position[1] = 106.0
+        #goal.heading = 32.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+    # Last traverse
+    # Start position
+        #goal.position[0] = 44.0
+        #goal.position[1] = 106.0
+        #goal.heading = 32.00*3.141592/180.0
+        #goal_writer.write(goal)
+        #while waypoint_navigation.state != :DRIVING
+        #end
+        #while waypoint_navigation.state != :TARGET_REACHED
+        #end
+        goal.position[0] = 58.0
+        goal.position[1] = 116.9
+        goal.heading = -43.3*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+        goal.position[0] = 67.7
+        goal.position[1] = 103.8
+        goal.heading = -93.5*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+        goal.position[0] = 61.7
+        goal.position[1] = 70.7
+        goal.heading = -132.9*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
     else
-        goal.position[0] = 7.00
-        goal.position[1] = 2.00
+        goal.position[0] = 1.1
+        goal.position[1] = 3.00
+        goal.position[2] = 0.00
+        goal.heading = 95.00*3.141592/180.0
+        goal_writer.write(goal)
     end
-    goal.position[2] = 0.00
-    #goal.heading = 135.00*3.141592/180.0
-    goal.heading = -90.00*3.141592/180.0
-    #goal.heading = 0.0
-    goal_writer.write(goal)
 
     Readline::readline("Press Enter to exit\n") do
     end
