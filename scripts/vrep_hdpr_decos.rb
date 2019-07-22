@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # Simulation of HDPR on DECOS
 
 require 'orocos'
@@ -52,7 +53,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
   # setup waypoint_navigation
     puts "Setting up waypoint_navigation"
     waypoint_navigation = Orocos.name_service.get 'waypoint_navigation'
-    Orocos.conf.apply(waypoint_navigation, ['default'], :override => true)
+    Orocos.conf.apply(waypoint_navigation, ['hdpr_simulation'], :override => true)
     waypoint_navigation.configure
     puts "done"
 
@@ -68,7 +69,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     path_planner = Orocos.name_service.get 'path_planner'
     path_planner.keep_old_waypoints = true
     Orocos.conf.apply(path_planner, ['hdpr','decos'], :override => true)
-    path_planner.write_results = false
+    path_planner.write_results = true
     path_planner.configure
     puts "done"
 
@@ -96,7 +97,6 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     arbiter.motion_command.connect_to                     locomotion_control.motion_command
 
 
-
     simulation_vrep.start
     sleep 1
     read_joint_dispatcher.start
@@ -107,5 +107,29 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     waypoint_navigation.start
     path_planner.start
 
+    trav_writer = path_planner.set_random_travmap.writer
+    t1 = Time.now
+    r = Random.rand(50)+10
+
+    #puts waypoint_navigation.state
+    while true
+        if Time.now-t1 > r
+            trav_writer.write(true)
+            r = Random.rand(50)+10
+            t1 = Time.now
+        end
+        if waypoint_navigation.state == :TARGET_REACHED
+            break
+        end
+    end
+
+    simulation_vrep.goalWaypoint.disconnect_from               path_planner.goalWaypoint
+
+    goal_writer = path_planner.goalWaypoint.writer
+    goal = Types::Base::Waypoint.new()
+    goal.position[0] = 110.0
+    goal.position[1] = 60.0
+    goal.heading = -90.00*3.141592/180.0
+    goal_writer.write(goal)
     Readline::readline("Press ENTER to exit\n")
 end
