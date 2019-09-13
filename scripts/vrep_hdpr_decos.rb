@@ -97,6 +97,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     arbiter.motion_command.connect_to                     locomotion_control.motion_command
 
     waypoint_navigation.feedback_data.connect_to          path_planner.feedback_data
+    waypoint_navigation.currentWaypoint.connect_to        path_planner.currentPos
 
     simulation_vrep.start
     sleep 1
@@ -124,13 +125,13 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
         end
     end
 
-    simulation_vrep.goalWaypoint.disconnect_from               path_planner.goalWaypoint
+    #simulation_vrep.goalWaypoint.disconnect_from               path_planner.goalWaypoint
 
-    goal_writer = path_planner.goalWaypoint.writer
-    goal = Types::Base::Waypoint.new()
-    goal.position[0] = 110.0
-    goal.position[1] = 60.0
-    goal.heading = -90.00*3.141592/180.0
-    goal_writer.write(goal)
+    #goal_writer = path_planner.goalWaypoint.writer
+    #goal = Types::Base::Waypoint.new()
+    #goal.position[0] = 110.0
+    #goal.position[1] = 60.0
+    #goal.heading = -90.00*3.141592/180.0
+    #goal_writer.write(goal)
     Readline::readline("Press ENTER to exit\n")
 end
