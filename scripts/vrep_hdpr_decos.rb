@@ -96,6 +96,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     waypoint_navigation.motion_command.connect_to         arbiter.follower_motion_command
     arbiter.motion_command.connect_to                     locomotion_control.motion_command
 
+    waypoint_navigation.feedback_data.connect_to          path_planner.feedback_data
 
     simulation_vrep.start
     sleep 1
