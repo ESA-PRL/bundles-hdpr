@@ -98,6 +98,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
 
     waypoint_navigation.feedback_data.connect_to          path_planner.feedback_data
     waypoint_navigation.currentWaypoint.connect_to        path_planner.currentPos
+    simulation_vrep.joints_readings.connect_to            waypoint_navigation.joints_readings
 
     simulation_vrep.start
     sleep 1
@@ -111,13 +112,13 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
 
     trav_writer = path_planner.set_random_travmap.writer
     t1 = Time.now
-    r = Random.rand(50)+10
+    r = Random.rand(50)+150
 
     #puts waypoint_navigation.state
     while true
         if Time.now-t1 > r
             trav_writer.write(true)
-            r = Random.rand(50)+10
+            r = Random.rand(50)+150
             t1 = Time.now
         end
         if waypoint_navigation.state == :TARGET_REACHED
