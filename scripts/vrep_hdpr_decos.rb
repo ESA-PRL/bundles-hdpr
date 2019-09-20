@@ -72,6 +72,13 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     path_planner.write_results = true
     path_planner.configure
     puts "done"
+    
+  # setup cost_updating
+    puts "Setting up cost updating"
+    cost_updating = Orocos.name_service.get 'cost_updating'
+    Orocos.conf.apply(cost_updating, ['hdpr_all'], :override => true)
+    cost_updating.configure
+    puts "done"
 
   ## LOGGERS ##
   # Orocos.log_all_ports
@@ -96,9 +103,16 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     waypoint_navigation.motion_command.connect_to         arbiter.follower_motion_command
     arbiter.motion_command.connect_to                     locomotion_control.motion_command
 
-    waypoint_navigation.feedback_data.connect_to          path_planner.feedback_data
-    waypoint_navigation.currentWaypoint.connect_to        path_planner.currentPos
-    simulation_vrep.joints_readings.connect_to            waypoint_navigation.joints_readings
+    simulation_vrep.joints_readings.connect_to            cost_updating.joints_readings
+    simulation_vrep.pose.connect_to                       cost_updating.pose
+
+    path_planner.current_terrain.connect_to               cost_updating.current_terrain
+    path_planner.reconnecting_index.connect_to            cost_updating.reconnecting_index
+    path_planner.trajectory.connect_to                    cost_updating.trajectory
+    
+    waypoint_navigation.trajectory_status.connect_to      cost_updating.trajectory_status
+
+    cost_updating.feedback_data.connect_to                path_planner.feedback_data
 
     simulation_vrep.start
     sleep 1
@@ -109,6 +123,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     arbiter.start
     waypoint_navigation.start
     path_planner.start
+    cost_updating.start
 
     trav_writer = path_planner.set_random_travmap.writer
     t1 = Time.now
