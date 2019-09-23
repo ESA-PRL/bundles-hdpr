@@ -76,7 +76,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
   # setup cost_updating
     puts "Setting up cost updating"
     cost_updating = Orocos.name_service.get 'cost_updating'
-    Orocos.conf.apply(cost_updating, ['hdpr_all'], :override => true)
+    Orocos.conf.apply(cost_updating, ['all_criteria'], :override => true)
     cost_updating.configure
     puts "done"
 
@@ -103,7 +103,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     waypoint_navigation.motion_command.connect_to         arbiter.follower_motion_command
     arbiter.motion_command.connect_to                     locomotion_control.motion_command
 
-    simulation_vrep.joints_readings.connect_to            cost_updating.joints_readings
+    waypoint_navigation.motion_command.connect_to         cost_updating.motion_command
     simulation_vrep.pose.connect_to                       cost_updating.pose
 
     path_planner.current_terrain.connect_to               cost_updating.current_terrain
