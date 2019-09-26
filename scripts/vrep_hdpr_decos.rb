@@ -68,7 +68,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     puts "Setting up path planner"
     path_planner = Orocos.name_service.get 'path_planner'
     path_planner.keep_old_waypoints = true
-    Orocos.conf.apply(path_planner, ['hdpr','decos'], :override => true)
+    Orocos.conf.apply(path_planner, ['hdpr','decos','slip&obstacles'], :override => true)
     path_planner.write_results = true
     path_planner.configure
     puts "done"
@@ -76,7 +76,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
   # setup cost_updating
     puts "Setting up cost updating"
     cost_updating = Orocos.name_service.get 'cost_updating'
-    Orocos.conf.apply(cost_updating, ['all_criteria'], :override => true)
+    Orocos.conf.apply(cost_updating, ['hdpr_slip&obstacles'], :override => true)
     cost_updating.configure
     puts "done"
 
@@ -141,7 +141,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
         end
     end
 
-    #simulation_vrep.goalWaypoint.disconnect_from               path_planner.goalWaypoint
+    simulation_vrep.goalWaypoint.disconnect_from          path_planner.goalWaypoint
 
     #goal_writer = path_planner.goalWaypoint.writer
     #goal = Types::Base::Waypoint.new()
@@ -149,5 +149,28 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     #goal.position[1] = 60.0
     #goal.heading = -90.00*3.141592/180.0
     #goal_writer.write(goal)
+    
+    Readline::readline("Press ENTER when the new goal is set\n")
+
+    simulation_vrep.goalWaypoint.connect_to               path_planner.goalWaypoint
+
+    while waypoint_navigation.state == :TARGET_REACHED
+    end
+
+    t1 = Time.now
+    r = Random.rand(50)+150
+
+    #puts waypoint_navigation.state
+    while true
+        if Time.now-t1 > r
+            trav_writer.write(true)
+            r = Random.rand(50)+150
+            t1 = Time.now
+        end
+        if waypoint_navigation.state == :TARGET_REACHED
+            break
+        end
+    end
+
     Readline::readline("Press ENTER to exit\n")
 end
