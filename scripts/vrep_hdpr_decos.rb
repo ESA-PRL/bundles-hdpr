@@ -82,6 +82,17 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
 
   ## LOGGERS ##
   # Orocos.log_all_ports
+    Orocos.log_all_configuration
+
+    logger_path_planner = Orocos.name_service.get 'autonomy_Logger'
+    logger_path_planner.file = "path_planner.log"
+    logger_path_planner.log(path_planner.trajectory2D)
+    logger_path_planner.log(path_planner.actual_total_cost)
+    logger_path_planner.log(path_planner.global_Total_Cost_map)
+    logger_path_planner.log(path_planner.global_Cost_map)
+    logger_path_planner.log(path_planner.local_Risk_map)
+    logger_path_planner.log(path_planner.local_Propagation_map)
+    logger_path_planner.log(path_planner.local_computation_time)
 
 
   ## PORT CONNECTIONS ##
@@ -125,10 +136,14 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     path_planner.start
     cost_updating.start
 
+    logger_path_planner.start
+
+    simulation_vrep.goalWaypoint.disconnect_from          path_planner.goalWaypoint
+
     trav_writer = path_planner.set_random_travmap.writer
     t1 = Time.now
     r = Random.rand(50)+150
-
+    
     #puts waypoint_navigation.state
     while true
         if Time.now-t1 > r
@@ -141,7 +156,6 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
         end
     end
 
-    simulation_vrep.goalWaypoint.disconnect_from          path_planner.goalWaypoint
 
     #goal_writer = path_planner.goalWaypoint.writer
     #goal = Types::Base::Waypoint.new()
@@ -156,6 +170,8 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
 
     while waypoint_navigation.state == :TARGET_REACHED
     end
+
+    simulation_vrep.goalWaypoint.disconnect_from          path_planner.goalWaypoint
 
     t1 = Time.now
     r = Random.rand(50)+150
