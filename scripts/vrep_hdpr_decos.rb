@@ -68,7 +68,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     puts "Setting up path planner"
     path_planner = Orocos.name_service.get 'path_planner'
     path_planner.keep_old_waypoints = true
-    Orocos.conf.apply(path_planner, ['hdpr','decos','slip&obstacles'], :override => true)
+    Orocos.conf.apply(path_planner, ['hdpr','decos'], :override => true)
     path_planner.write_results = true
     path_planner.configure
     puts "done"
