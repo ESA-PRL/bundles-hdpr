@@ -4,6 +4,8 @@ require 'orocos'
 require 'rock/bundle'
 require 'readline'
 require 'optparse'
+require 'vizkit'
+
 include Orocos
 
 options = {:bb2 => true,
@@ -18,8 +20,30 @@ OptionParser.new do |opts|
 end.parse!
 
 Bundles.initialize
+Bundles.transformer.load_conf(
+    Bundles.find_file('config', 'transforms_scripts_ga_slam.rb'))
 
-Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3', 'imu', 'gps', 'gyro', 'unit_vicon', 'unit_shutter_controller', 'unit_hazard_detector', 'fdir', 'viso2::StereoOdometer' => 'viso2', 'pancam_transformer::Task' => 'pancam_transformer', 'gps_transformer::Task' => 'gps_transformer', 'orbiter_preprocessing::Task' => 'orbiter_preprocessing', 'ga_slam::Task' => 'ga_slam' do
+Orocos::Process.run(
+   'autonomy',
+   'navigation',
+   'control',
+   'unit_bb2',
+   'unit_bb3',
+   'unit_pancam',
+   'imu',
+   'gps',
+   'gyro',
+   'unit_vicon',
+   'unit_shutter_controller',
+   'unit_hazard_detector',
+   'fdir',
+   'temperature',
+   'viso2::StereoOdometer' => 'viso2',
+   'pancam_transformer::Task' => 'pancam_transformer',
+   'gps_transformer::Task' => 'gps_transformer',
+   'orbiter_preprocessing::Task' => 'orbiter_preprocessing',
+   'ga_slam::Task' => 'ga_slam') \
+do
 
     joystick = Orocos.name_service.get 'joystick'
     Orocos.conf.apply(joystick, ['default'], :override => true)
@@ -57,6 +81,10 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     Orocos.conf.apply(fdir, ['exoter'], :override => true)
     fdir.configure
 
+    temperature = TaskContext.get 'temperature'
+    Orocos.conf.apply(temperature, ['default'], :override => true)
+    temperature.configure
+
     if options[:v] == false
         gps = TaskContext.get 'gps'
         Orocos.conf.apply(gps, ['HDPR', 'Netherlands', 'DECOS'], :override => true)
@@ -65,17 +93,22 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
         gps_heading = TaskContext.get 'gps_heading'
         Orocos.conf.apply(gps_heading, ['default'], :override => true)
         gps_heading.configure
+
+        gps_transformer = TaskContext.get 'gps_transformer'
+        gps_transformer.configure
     else
         vicon = TaskContext.get 'vicon'
         Orocos.conf.apply(vicon, ['default','hdpr'], :override => true)
         vicon.configure
     end
 
-    puts "Starting BB2"
-
     camera_firewire_bb2 = TaskContext.get 'camera_firewire_bb2'
     Orocos.conf.apply(camera_firewire_bb2, ['hdpr_bb2','egp_bb2_id','auto_exposure'], :override => true)
     camera_firewire_bb2.configure
+
+    camera_firewire_bb3 = TaskContext.get 'camera_firewire_bb3'
+    Orocos.conf.apply(camera_firewire_bb3, ['hdpr_bb3', 'altec_bb3_id', 'auto_exposure'], :override => true)
+    camera_firewire_bb3.configure
 
     camera_bb2 = TaskContext.get 'camera_bb2'
     Orocos.conf.apply(camera_bb2, ['egp_bb2'], :override => true)
@@ -90,7 +123,7 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     stereo_bb2.configure
 
     stereo_bb3 = TaskContext.get 'stereo_bb3'
-    Orocos.conf.apply(stereo_bb3, ['hdpr_bb3_left_right'], :override => true)
+    Orocos.conf.apply(stereo_bb3, ['marta_bb3_left_right'], :override => true)
     stereo_bb3.configure
 
     stereo_pancam = TaskContext.get 'stereo_pancam'
@@ -126,9 +159,6 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     Orocos.conf.apply(pancam_transformer, ['default'], :override => true)
     pancam_transformer.configure
 
-    gps_transformer = TaskContext.get 'gps_transformer'
-    gps_transformer.configure
-
     orbiter_preprocessing = TaskContext.get 'orbiter_preprocessing'
     Orocos.conf.apply(orbiter_preprocessing, ['default'], :override => true)
     # Orocos.conf.apply(orbiter_preprocessing, ['prepared'], :override => true)
@@ -145,10 +175,14 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     traversability.configure
 
     path_planner = Orocos.name_service.get 'path_planner'
-    path_planner.keep_old_waypoints = true
-    Orocos.conf.apply(path_planner, ['hdpr','prl'], :override => true)
+    path_planner.keep_old_waypoints = false
+    if options[:v] == false
+        Orocos.conf.apply(path_planner, ['hdpr','decos'], :override => true)
+    else
+        Orocos.conf.apply(path_planner, ['hdpr','prl'], :override => true)
+    end
+    path_planner.write_results = options[:logging]
     path_planner.configure
-    puts "done"
 
     # Copy parameters from ga_slam to orbiter_preprocessing
     orbiter_preprocessing.cropSize = ga_slam.orbiterMapLength
@@ -176,8 +210,8 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     camera_bb2.right_frame.connect_to                   stereo_bb2.right_frame
     camera_bb3.left_frame.connect_to                    stereo_bb3.left_frame
     camera_bb3.right_frame.connect_to                   stereo_bb3.right_frame
-    pancam_panorama.left_frame_out.connect_to           stereo_pancam.left_frame
-    pancam_panorama.right_frame_out.connect_to          stereo_pancam.right_frame
+    #pancam_panorama.left_frame_out.connect_to           stereo_pancam.left_frame
+    #pancam_panorama.right_frame_out.connect_to          stereo_pancam.right_frame
 
     stereo_bb2.left_frame_sync.connect_to               hazard_detector.camera_frame
     stereo_bb2.distance_frame.connect_to                hazard_detector.distance_frame
@@ -188,28 +222,18 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     hazard_detector.hazard_detected.connect_to          fdir.hazard_detected
     fdir.fault_detected.connect_to                      command_arbiter.fault_detected
 
-    stereo_bb2.point_cloud.connect_to                   ga_slam.hazcamCloud
+    #stereo_bb2.point_cloud.connect_to                   ga_slam.hazcamCloud
     stereo_bb3.point_cloud.connect_to                   ga_slam.loccamCloud
-    stereo_pancam.point_cloud.connect_to                ga_slam.pancamCloud
+    #stereo_pancam.point_cloud.connect_to                ga_slam.pancamCloud
 
     camera_bb2.left_frame.connect_to                    viso2.left_frame
     camera_bb2.right_frame.connect_to                   viso2.right_frame
 
-    pancam_panorama.tilt_angle_out_degrees.connect_to   pancam_transformer.pitch
-    pancam_panorama.pan_angle_out_degrees.connect_to    pancam_transformer.yaw
-    pancam_transformer.transformation.connect_to        ga_slam.pancamTransformation
-
-    gps_heading.pose_samples_out.connect_to             gps_transformer.inputPose
-    gps_heading.pose_samples_out.connect_to             orbiter_preprocessing.robotPose
-
-    #viso2.pose_samples_out.connect_to                   ga_slam.odometryPose
-    gps_transformer.outputDriftPose.connect_to          ga_slam.odometryPose
-
-    # Connect IMU (roll, pitch) + Laser Gyro (yaw)
-    gps_transformer.outputPose.connect_to               ga_slam.imuOrientation
+    #pancam_panorama.tilt_angle_out_degrees.connect_to   pancam_transformer.pitch
+    #pancam_panorama.pan_angle_out_degrees.connect_to    pancam_transformer.yaw
+    #pancam_transformer.transformation.connect_to        ga_slam.pancamTransformation
 
     orbiter_preprocessing.pointCloud.connect_to         ga_slam.orbiterCloud
-    gps_transformer.outputPose.connect_to               ga_slam.orbiterCloudPose
 
     ga_slam.elevationMap.connect_to                     traversability.elevation_map
 
@@ -217,6 +241,8 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     traversability.traversability_map.connect_to        path_planner.traversability_map
     path_planner.finished_planning.connect_to           hazard_detector.new_plan
     path_planner.trajectory.connect_to                  waypoint_navigation.trajectory
+
+    #viso2.pose_samples_out.connect_to                   ga_slam.odometryPose
 
     if options[:v] == false
         gps.pose_samples.connect_to                         gps_heading.gps_pose_samples
@@ -227,11 +253,23 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
         imu_stim300.orientation_samples_out.connect_to      gps_heading.imu_pose_samples
         gyro.orientation_samples.connect_to                 gps_heading.gyro_pose_samples
         command_arbiter.motion_command.connect_to           gps_heading.motion_command
+
+        gps_heading.pose_samples_out.connect_to             gps_transformer.inputPose
+        gps_heading.pose_samples_out.connect_to             orbiter_preprocessing.robotPose
+        gps_transformer.outputDriftPose.connect_to          ga_slam.odometryPose
+        gps_transformer.outputPose.connect_to               ga_slam.imuOrientation
+        gps_transformer.outputPose.connect_to               ga_slam.orbiterCloudPose
+
         puts "using gps"
     else
         vicon.pose_samples.connect_to                       waypoint_navigation.pose
         vicon.pose_samples.connect_to                       path_planner.pose
         vicon.pose_samples.connect_to                       traversability.pose
+
+        vicon.pose_samples.connect_to                       ga_slam.odometryPose
+        vicon.pose_samples.connect_to                       orbiter_preprocessing.robotPose
+        vicon.pose_samples.connect_to                       ga_slam.orbiterCloudPose
+
         puts "using vicon"
     end
 
@@ -251,6 +289,7 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     logger_path_planner.log(path_planner.global_Cost_map)
     logger_path_planner.log(path_planner.local_Risk_map)
     logger_path_planner.log(path_planner.local_Propagation_map)
+    logger_path_planner.log(path_planner.local_computation_time)
 
     if options[:v] == false
         logger_gps_heading = Orocos.name_service.get 'gps_Logger'
@@ -270,6 +309,11 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     logger_imu.file = "imu.log"
     logger_imu.log(imu_stim300.orientation_samples_out)
 
+    logger_temperature = Orocos.name_service.get 'temperature_Logger'
+    logger_temperature.file = "temperature.log"
+    logger_temperature.log(temperature.temperature_samples)
+
+    ####### Start Tasks #######
     platform_driver.start
     read_joint_dispatcher.start
     command_joint_dispatcher.start
@@ -280,26 +324,27 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     imu_stim300.start
     gyro.start
     fdir.start
+    temperature.start
     if options[:v] == false
         gps.start
         gps_heading.start
+        gps_transformer.start
     else
         vicon.start
     end
-    camera_bb2.start
     camera_firewire_bb2.start
-    stereo_bb2.start
-    shutter_controller_bb2.start
+    camera_firewire_bb3.start
+    camera_bb2.start
     camera_bb3.start
+    stereo_bb2.start
     stereo_bb3.start
+    shutter_controller_bb2.start
     # stereo_pancam.start
     hazard_detector.start
     # viso2.start
     # pancam_transformer.start
-    gps_transformer.start
-    orbiter_preprocessing.start
+    # orbiter_preprocessing.start
     ga_slam.start
-
     if options[:v] == false
         # Race condition with internal gps_heading states. This check is here to only trigger the
         # trajectoryGen when the pose has been properly initialised. Otherwise the trajectory is set wrong.
@@ -312,6 +357,10 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
     traversability.start
     waypoint_navigation.start
     path_planner.start
+
+    ####### ROS RViz #######
+    spawn 'roslaunch ga_slam_visualization ga_slam_visualization.launch'
+    sleep 3
 
     Readline::readline("Press ENTER to send goal pose to planner\n") do
     end
@@ -326,33 +375,67 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'unit_bb3',
         logger_hazard_detector.start
         logger_path_planner.start
         logger_imu.start
+        logger_temperature.start
     end
 
     #goal.start
     goal_writer = path_planner.goalWaypoint.writer
     goal = Types::Base::Waypoint.new()
+
     if options[:v] == false
-        # Goal Position Test w/ Ricardo
-        #goal.position[0] = 40.0
-        #goal.position[1] = 115.0
-        # Goal Position
-        #goal.position[0] = 50.0
-        #goal.position[1] = 110.0
-        # Goal going to van
-        goal.position[0] = 65.0
-        goal.position[1] = 55.0
-        # Start Position
-        #goal.position[0] = 110.0
-        #goal.position[1] = 55.0
+      # To the starting position
+        goal.position[0] = 105.0
+        goal.position[1] = 70.0
+        goal.heading = 135.0*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+      # To the desired destination
+        goal.position[0] = 45.0
+        goal.position[1] = 85.0
+        goal.heading = 180.0*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+      # Back to the starting position
+        goal.position[0] = 105.0
+        goal.position[1] = 70.0
+        goal.heading = -45.0*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
     else
-        goal.position[0] = 7.00
-        goal.position[1] = 2.00
+      # First waypoint to test
+        goal.position[0] = 5.00
+        goal.position[1] = 5.00
+        goal.position[2] = 0.00
+        goal.heading = 95.00*3.141592/180.0
+        goal_writer.write(goal)
+
+        #random_travmap_writer = path_planner.set_random_travmap.writer
+        #random_travmap_writer.write(true)
+
+        Readline::readline("Press Enter to change the goal waypoint\n") do
+        end
+      # Second waypoint to test
+        goal.position[0] = 5.00
+        goal.position[1] = 3.00
+        goal.position[2] = 0.00
+        goal.heading = 95.00*3.141592/180.0
+        goal_writer.write(goal)
     end
-    goal.position[2] = 0.00
-    #goal.heading = 135.00*3.141592/180.0
-    goal.heading = -90.00*3.141592/180.0
-    #goal.heading = 0.0
-    goal_writer.write(goal)
+
+    ####### Vizkit #######
+    #Vizkit.display camera_bb2.left_frame
+    #Vizkit.display camera_bb3.left_frame
+    #Vizkit.display bag.pancam_panorama.left_frame_out
+    #Vizkit.exec
 
     Readline::readline("Press Enter to exit\n") do
     end
