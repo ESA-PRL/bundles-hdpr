@@ -115,7 +115,12 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
 
     path_planner = Orocos.name_service.get 'path_planner'
     path_planner.keep_old_waypoints = true
-    Orocos.conf.apply(path_planner, ['hdpr','decos_test','slip&obstacles'], :override => true)
+    if options[:v] == false
+        Orocos.conf.apply(path_planner, ['hdpr','decos_test','slip&obstacles'], :override => true)
+    else
+        Orocos.conf.apply(path_planner, ['hdpr','prl','slip&obstacles'], :override => true)
+    end
+    path_planner.write_results = options[:logging]
     path_planner.configure
 
     cost_updating = Orocos.name_service.get 'cost_updating'
@@ -159,7 +164,6 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     path_planner.trajectory.connect_to                  waypoint_navigation.trajectory
 
     waypoint_navigation.motion_command.connect_to       cost_updating.motion_command
-    simulation_vrep.pose.connect_to                     cost_updating.pose
 
     path_planner.current_terrain.connect_to             cost_updating.current_terrain
     path_planner.reconnecting_index.connect_to          cost_updating.reconnecting_index
@@ -174,6 +178,7 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
         gps.raw_data.connect_to                             gps_heading.gps_raw_data
         gps_heading.pose_samples_out.connect_to             waypoint_navigation.pose
         gps_heading.pose_samples_out.connect_to             path_planner.pose
+        gps_heading.pose_samples_out.connect_to             cost_updating.pose
         gps_heading.pose_samples_out.connect_to             traversability.pose
         imu_stim300.orientation_samples_out.connect_to      gps_heading.imu_pose_samples
         gyro.orientation_samples.connect_to                 gps_heading.gyro_pose_samples
@@ -182,6 +187,7 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     else
         vicon.pose_samples.connect_to                       waypoint_navigation.pose
         vicon.pose_samples.connect_to                       path_planner.pose
+        vicon.pose_samples.connect_to                       cost_updating.pose
         vicon.pose_samples.connect_to                       traversability.pose
         puts "using vicon"
     end
@@ -308,11 +314,15 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
         while waypoint_navigation.state != :TARGET_REACHED
         end
     else
-        #goal.position[0] = 1.1
-        #goal.position[1] = 3.00
-        #goal.position[2] = 0.00
-        #goal.heading = 95.00*3.141592/180.0
-        #goal_writer.write(goal)
+        goal.position[0] = 7.0
+        goal.position[1] = 3.00
+        goal.position[2] = 0.00
+        goal.heading = 95.00*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
     end
 
     Readline::readline("Press Enter to exit\n") do
