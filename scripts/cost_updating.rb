@@ -124,7 +124,11 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     path_planner.configure
 
     cost_updating = Orocos.name_service.get 'cost_updating'
-    Orocos.conf.apply(cost_updating, ['hdpr','decos_test','slip&obstacles'], :override => true)
+    if path_planner.keep_old_waypoints == false
+        Orocos.conf.apply(cost_updating, ['hdpr','decos_test','slip'], :override => true)
+    else
+        Orocos.conf.apply(cost_updating, ['hdpr','decos_test','slip&obstacles'], :override => true)
+    end
     cost_updating.configure
 
 
