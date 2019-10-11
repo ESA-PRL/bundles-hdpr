@@ -78,7 +78,11 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     puts "Starting BB2"
 
     camera_firewire_bb2 = TaskContext.get 'camera_firewire_bb2'
-    Orocos.conf.apply(camera_firewire_bb2, ['hdpr_bb2','egp_bb2_id'], :override => true)
+    if options[:v] == false
+        Orocos.conf.apply(camera_firewire_bb2, ['hdpr_bb2','egp_bb2_id'], :override => true)
+    else
+        Orocos.conf.apply(camera_firewire_bb2, ['hdpr_bb2','egp_bb2_id','auto_exposure'], :override => true)
+    end
     camera_firewire_bb2.configure
 
     camera_bb2 = TaskContext.get 'camera_bb2'
@@ -318,15 +322,20 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
         while waypoint_navigation.state != :TARGET_REACHED
         end
     else
+        # First waypoint to test
         goal.position[0] = 7.0
+        goal.position[1] = 2.00
+        goal.position[2] = 0.00
+        goal.heading = 95.00*3.141592/180.0
+        goal_writer.write(goal)
+        Readline::readline("Press Enter to change the goal waypoint\n") do
+        end
+        # Second waypoint to test
+        goal.position[0] = 7.00
         goal.position[1] = 3.00
         goal.position[2] = 0.00
         goal.heading = 95.00*3.141592/180.0
         goal_writer.write(goal)
-        while waypoint_navigation.state != :DRIVING
-        end
-        while waypoint_navigation.state != :TARGET_REACHED
-        end
     end
 
     Readline::readline("Press Enter to exit\n") do
