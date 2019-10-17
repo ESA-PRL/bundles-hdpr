@@ -68,7 +68,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
     puts "Setting up path planner"
     path_planner = Orocos.name_service.get 'path_planner'
     path_planner.keep_old_waypoints = true
-    Orocos.conf.apply(path_planner, ['hdpr','decos_test','slip&obstacles'], :override => true)
+    Orocos.conf.apply(path_planner, ['hdpr','decos_3terrains','slip&obstacles'], :override => true)
     path_planner.write_results = true
     path_planner.configure
     puts "done"
@@ -76,7 +76,7 @@ Orocos::Process.run 'navigation', 'control', 'simulation', 'autonomy' do
   # setup cost_updating
     puts "Setting up cost updating"
     cost_updating = Orocos.name_service.get 'cost_updating'
-    Orocos.conf.apply(cost_updating, ['hdpr','decos_test','slip&obstacles'], :override => true)
+    Orocos.conf.apply(cost_updating, ['hdpr','decos_3terrains','slip&obstacles'], :override => true)
     cost_updating.configure
     puts "done"
 
