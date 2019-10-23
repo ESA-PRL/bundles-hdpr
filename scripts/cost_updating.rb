@@ -297,30 +297,87 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     goal_writer = path_planner.goalWaypoint.writer
     goal = Types::Base::Waypoint.new()
     if options[:v] == false
-        goal.position[0] = 108.0
-        goal.position[1] = 67.0
-        goal.heading = 120.0*3.141592/180.0
+        goal.position[0] = 69.0
+        goal.position[1] = 53.0
+        goal.heading = 95.0*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+        goal.position[0] = 67.0
+        goal.position[1] = 59.0
+        goal.heading = 90.0*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+        goal.position[0] = 64.0
+        goal.position[1] = 70.0
+        goal.heading = 80.0*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+        goal.position[0] = 69.0
+        goal.position[1] = 79.0
+        goal.heading = 45.0*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+        goal.position[0] = 75.0
+        goal.position[1] = 86.0
+        goal.heading = 50.0*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+        goal.position[0] = 78.0
+        goal.position[1] = 99.0
+        goal.heading = 110.0*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+        goal.position[0] = 69.0
+        goal.position[1] = 108.0
+        goal.heading = 125*3.141592/180.0
+        goal_writer.write(goal)
+        while waypoint_navigation.state != :DRIVING
+        end
+        while waypoint_navigation.state != :TARGET_REACHED
+        end
+        goal.position[0] = 54.0
+        goal.position[1] = 112.0
+        goal.heading = 170.0*3.141592/180.0
         goal_writer.write(goal)
         while waypoint_navigation.state != :DRIVING
         end
         while waypoint_navigation.state != :TARGET_REACHED
         end
         goal.position[0] = 48.0
-        goal.position[1] = 108.0
-        goal.heading = 0.0*3.141592/180.0
+        goal.position[1] = 106.0
+        goal.heading = 180.0*3.141592/180.0
         goal_writer.write(goal)
         while waypoint_navigation.state != :DRIVING
         end
         while waypoint_navigation.state != :TARGET_REACHED
         end
-        goal.position[0] = 108.0
-        goal.position[1] = 67.0
-        goal.heading = -120.0*3.141592/180.0
+        goal.position[0] = 69.0
+        goal.position[1] = 53.0
+        goal.heading = -90.0*3.141592/180.0
         goal_writer.write(goal)
         while waypoint_navigation.state != :DRIVING
         end
         while waypoint_navigation.state != :TARGET_REACHED
         end
+
     else
         # First waypoint to test
         goal.position[0] = 7.0
