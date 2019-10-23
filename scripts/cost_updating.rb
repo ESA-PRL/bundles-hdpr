@@ -180,6 +180,7 @@ Orocos::Process.run 'autonomy', 'navigation', 'control', 'unit_bb2', 'imu', 'gps
     waypoint_navigation.trajectory_status.connect_to    cost_updating.trajectory_status
 
     cost_updating.feedback_data.connect_to              path_planner.feedback_data
+    command_arbiter.joystick_state.connect_to           cost_updating.joystick_state
 
     if options[:v] == false
         gps.pose_samples.connect_to                         gps_heading.gps_pose_samples
